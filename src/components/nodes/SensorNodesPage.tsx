@@ -155,7 +155,7 @@ export const SensorNodesPage: React.FC<Props> = ({
                         : isOnline
                         ? 'ONLINE (LIVE)'
                         : isStale
-                        ? 'STALE (>120s)'
+                        ? 'STALE'
                         : 'OFFLINE'}
                     </span>
                   </div>

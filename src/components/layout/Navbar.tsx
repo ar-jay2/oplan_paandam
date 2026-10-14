@@ -55,7 +55,7 @@ export const Navbar: React.FC<Props> = ({
                 : 'text-rose-400'
             }`}
           >
-            {isStale ? 'STALE (>120s)' : connectionState === 'connected' ? 'ACTIVE' : 'OFFLINE'}
+            {isStale ? 'STALE' : connectionState === 'connected' ? 'ACTIVE' : 'OFFLINE'}
           </span>
         </div>
 

@@ -100,69 +100,6 @@ export const LiveMonitoringPage: React.FC<Props> = ({
 
   return (
     <div className="space-y-6">
-      {/* Supabase Error Alert if active */}
-      {supabaseStatus?.errorMessage && !supabaseStatus.isConnected && (
-        <div className="bg-rose-950/70 border border-rose-500/60 rounded-lg p-3.5 flex items-start justify-between text-rose-200">
-          <div className="flex items-start gap-2.5">
-            <AlertOctagon className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-rose-300">
-                Supabase Connection Error
-              </p>
-              <p className="text-xs text-rose-200/90 mt-0.5">
-                {supabaseStatus.errorMessage}
-              </p>
-              {supabaseStatus.lastSuccessfulReadingTime && (
-                <p className="text-[11px] font-mono text-slate-300 mt-1">
-                  Last successful reading received at: {new Date(supabaseStatus.lastSuccessfulReadingTime).toLocaleString()}
-                </p>
-              )}
-            </div>
-          </div>
-          <span className="text-[11px] font-mono text-rose-300 bg-rose-900/60 px-2 py-1 rounded border border-rose-700 shrink-0">
-            CONNECTION FAILED
-          </span>
-        </div>
-      )}
-
-      {/* Waiting for first packet or Staleness Banner */}
-      {!latestReading ? (
-        <div className="bg-slate-900 border border-slate-700 rounded-lg p-3.5 flex items-center justify-between text-slate-300">
-          <div className="flex items-center gap-2.5">
-            <Radio className="w-5 h-5 text-cyan-400 animate-pulse shrink-0" />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                Awaiting Initial Telemetry Stream
-              </p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Listening on Supabase table <code className="text-cyan-300 font-mono">flood_readings</code>. Telemetry packets uploaded by ESP32 #2 will render immediately.
-              </p>
-            </div>
-          </div>
-          <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/80 px-2 py-1 rounded border border-cyan-800/60 shrink-0">
-            AUTO-LISTENING
-          </span>
-        </div>
-      ) : isStale ? (
-        <div className="bg-amber-950/70 border border-amber-500/60 rounded-lg p-3.5 flex items-center justify-between text-amber-200">
-          <div className="flex items-center gap-2.5">
-            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider">
-                Stale Telemetry Detected
-              </p>
-              <p className="text-xs text-amber-300/80 mt-0.5">
-                The last telemetry packet was received at {new Date(latestReading.received_at).toLocaleTimeString()} ({freshnessState.elapsedSeconds ? `${freshnessState.elapsedSeconds}s ago` : ''}).
-                Expected transmission cadence is ~{observedCadence ?? 30}s. Verify ESP32 #2 Wi-Fi connection and LoRa transmission from ESP32 #1.
-              </p>
-            </div>
-          </div>
-          <span className="text-xs font-mono font-bold text-amber-300 bg-amber-900/60 px-2.5 py-1 rounded border border-amber-700 shrink-0">
-            STALE
-          </span>
-        </div>
-      ) : null}
-
       {/* Top Station Status Strip */}
       <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -203,7 +140,6 @@ export const LiveMonitoringPage: React.FC<Props> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <TelemetrySourceBadge source={telemetrySource} />
           {/* Dynamic Freshness State Badge */}
           <span
             className={`font-mono text-xs font-bold px-2.5 py-1 rounded border uppercase tracking-wider ${
