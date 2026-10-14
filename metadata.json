@@ -1,0 +1,6 @@
+{
+  "name": "OPLAN PA-ANDAM - Real-Time Flood Monitoring",
+  "description": "A Resilient Multi-Protocol IoT Framework for Real-Time Flood Monitoring at Aklan State University–Ibajay Campus.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
