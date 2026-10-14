@@ -4,6 +4,8 @@
  */
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
+export const DEFAULT_SUPABASE_URL = 'https://cactbrecfedmzsuqynve.supabase.co';
+
 const STORAGE_KEY_URL = 'pa_andam_supabase_url';
 const STORAGE_KEY_KEY = 'pa_andam_supabase_anon_key';
 
@@ -15,7 +17,7 @@ export function getStoredSupabaseConfig(): { url: string; anonKey: string } {
   const storedKey = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_KEY) : '';
 
   return {
-    url: storedUrl || envUrl || '',
+    url: storedUrl || envUrl || DEFAULT_SUPABASE_URL,
     anonKey: storedKey || envKey || '',
   };
 }

@@ -43,6 +43,24 @@ export const SystemSettingsPage: React.FC<Props> = ({
     message: '',
   });
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
+  const [copiedRls, setCopiedRls] = useState<boolean>(false);
+
+  const sampleRlsCode = `-- Run in Supabase SQL Editor:
+CREATE POLICY "Public Read Access: flood_nodes"
+  ON public.flood_nodes FOR SELECT
+  TO anon, authenticated USING (true);
+
+CREATE POLICY "Public Read Access: flood_readings"
+  ON public.flood_readings FOR SELECT
+  TO anon, authenticated USING (true);
+
+CREATE POLICY "Public Read Access: flood_events"
+  ON public.flood_events FOR SELECT
+  TO anon, authenticated USING (true);
+
+CREATE POLICY "Public Read Access: flood_settings"
+  ON public.flood_settings FOR SELECT
+  TO anon, authenticated USING (true);`;
 
   useEffect(() => {
     const { url, anonKey } = getStoredSupabaseConfig();
@@ -65,20 +83,48 @@ export const SystemSettingsPage: React.FC<Props> = ({
         return;
       }
 
-      const { data, error } = await client.from('flood_nodes').select('id').limit(1);
+      // 1. Test flood_nodes
+      const { data: nodes, error: nodesError } = await client.from('flood_nodes').select('id, node_code').limit(1);
 
-      if (error) {
+      if (nodesError) {
+        const isRls = nodesError.code === '42501' || nodesError.message.toLowerCase().includes('permission denied');
         setTestResult({
           status: 'error',
-          message: `Connected to Supabase endpoint, but table query returned: ${error.message}. Ensure database migration has been run.`,
+          message: isRls
+            ? `Row Level Security (RLS) blocked access to 'flood_nodes': ${nodesError.message}. Apply the SELECT policy for the 'anon' role.`
+            : `Failed to query flood_nodes: ${nodesError.message}`,
         });
-      } else {
-        setTestResult({
-          status: 'success',
-          message: 'Connection verified! Successfully queried flood_nodes from Supabase PostgreSQL.',
-        });
-        telemetryStore.initRealtimeOrSimulation();
+        return;
       }
+
+      // 2. Test flood_readings
+      const { data: readings, error: readingsError } = await client
+        .from('flood_readings')
+        .select('id, water_level, received_at')
+        .order('received_at', { ascending: false })
+        .limit(1);
+
+      if (readingsError) {
+        const isRls = readingsError.code === '42501' || readingsError.message.toLowerCase().includes('permission denied');
+        setTestResult({
+          status: 'error',
+          message: isRls
+            ? `Row Level Security (RLS) blocked access to 'flood_readings': ${readingsError.message}. Apply the SELECT policy for the 'anon' role.`
+            : `Failed to query flood_readings: ${readingsError.message}`,
+        });
+        return;
+      }
+
+      const readingsInfo = readings && readings.length > 0
+        ? `Found recent hardware telemetry (last reading at ${new Date(readings[0].received_at).toLocaleTimeString()}).`
+        : 'Tables accessible, awaiting first packet from ESP32 gateway.';
+
+      setTestResult({
+        status: 'success',
+        message: `Connection verified successfully! ${readingsInfo}`,
+      });
+
+      telemetryStore.initSupabaseData();
     } catch (err: any) {
       setTestResult({
         status: 'error',
@@ -250,6 +296,37 @@ void loop() {
                 Service-role keys and master database passwords are never shipped in frontend JavaScript bundles. Only the public anon key is accessed client-side.
               </p>
             </div>
+          </div>
+
+          {/* Row Level Security (RLS) Policy Guide Card */}
+          <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                <h3 className="text-xs font-bold uppercase font-mono tracking-wider text-slate-200">
+                  Row Level Security (RLS) Policies
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(sampleRlsCode);
+                  setCopiedRls(true);
+                  setTimeout(() => setCopiedRls(false), 2500);
+                }}
+                className="flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300 font-mono bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/60"
+              >
+                {copiedRls ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                <span>{copiedRls ? 'Copied' : 'Copy Policy SQL'}</span>
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-400 leading-relaxed mb-3">
+              If Supabase returns <code className="text-amber-400 font-mono">42501 permission denied</code>, run these SQL statements in your Supabase SQL Editor to allow public read access for monitoring:
+            </p>
+
+            <pre className="bg-slate-950 p-2.5 rounded border border-slate-800 text-[10px] font-mono text-cyan-300/90 overflow-x-auto max-h-40 leading-relaxed">
+              <code>{sampleRlsCode}</code>
+            </pre>
           </div>
         </div>
 

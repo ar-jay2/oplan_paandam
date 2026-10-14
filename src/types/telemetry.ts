@@ -74,6 +74,19 @@ export interface RawLoraPacket {
   timestamp: string;
 }
 
+export interface SupabaseConnectionStatus {
+  isConfigured: boolean;
+  isConnected: boolean;
+  hasAnonKey: boolean;
+  projectUrl: string;
+  lastSyncTime: string | null;
+  lastSuccessfulReadingTime: string | null;
+  errorMessage: string | null;
+  isRlsError: boolean;
+  readingsCount: number;
+  observedCadenceSeconds?: number | null;
+}
+
 export type NavigationPage =
   | 'overview'
   | 'live'
@@ -83,3 +96,4 @@ export type NavigationPage =
   | 'alerts'
   | 'reports'
   | 'settings';
+

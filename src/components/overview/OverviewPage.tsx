@@ -44,6 +44,18 @@ interface Props {
   telemetrySource: TelemetrySource;
   connectionState: ConnectionState;
   isStale: boolean;
+  observedCadence?: number | null;
+  freshnessState?: {
+    state: 'fresh' | 'delayed' | 'stale' | 'disconnected';
+    label: string;
+    elapsedSeconds: number | null;
+    observedCadence: number | null;
+  };
+  supabaseStatus?: {
+    isConnected: boolean;
+    errorMessage: string | null;
+    lastSuccessfulReadingTime: string | null;
+  };
   onNavigateToLive: () => void;
   onNavigateToAnalytics: () => void;
 }
@@ -57,6 +69,9 @@ export const OverviewPage: React.FC<Props> = ({
   telemetrySource,
   connectionState,
   isStale,
+  observedCadence,
+  freshnessState = { state: 'disconnected', label: 'NO DATA', elapsedSeconds: null, observedCadence: null },
+  supabaseStatus,
   onNavigateToLive,
   onNavigateToAnalytics,
 }) => {
@@ -78,8 +93,50 @@ export const OverviewPage: React.FC<Props> = ({
 
   return (
     <div className="space-y-6">
-      {/* Staleness Warning Banner if applicable */}
-      {isStale && (
+      {/* Supabase Error Alert if active */}
+      {supabaseStatus?.errorMessage && !supabaseStatus.isConnected && (
+        <div className="bg-rose-950/70 border border-rose-500/60 rounded-lg p-3.5 flex items-start justify-between text-rose-200">
+          <div className="flex items-start gap-2.5">
+            <AlertOctagon className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-rose-300">
+                Supabase Connection Error
+              </p>
+              <p className="text-xs text-rose-200/90 mt-0.5">
+                {supabaseStatus.errorMessage}
+              </p>
+              {supabaseStatus.lastSuccessfulReadingTime && (
+                <p className="text-[11px] font-mono text-slate-300 mt-1">
+                  Last successful reading received at: {new Date(supabaseStatus.lastSuccessfulReadingTime).toLocaleString()}
+                </p>
+              )}
+            </div>
+          </div>
+          <span className="text-[11px] font-mono text-rose-300 bg-rose-900/60 px-2 py-1 rounded border border-rose-700 shrink-0">
+            CONNECTION FAILED
+          </span>
+        </div>
+      )}
+
+      {/* Waiting for first telemetry or Staleness Warning Banner */}
+      {!latestReading ? (
+        <div className="bg-slate-900 border border-slate-700 rounded-lg p-3.5 flex items-center justify-between text-slate-300">
+          <div className="flex items-center gap-2.5">
+            <Radio className="w-5 h-5 text-cyan-400 animate-pulse shrink-0" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                Awaiting Initial Telemetry Stream
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Listening for real-time ESP32 LoRa readings in Supabase table <code className="text-cyan-300 font-mono">flood_readings</code>. As soon as the edge function receives a packet, the dashboard updates automatically.
+              </p>
+            </div>
+          </div>
+          <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/80 px-2 py-1 rounded border border-cyan-800/60 shrink-0">
+            AUTO-LISTENING
+          </span>
+        </div>
+      ) : isStale ? (
         <div className="bg-amber-950/60 border border-amber-500/50 rounded-lg p-3.5 flex items-center justify-between text-amber-200">
           <div className="flex items-center gap-2.5">
             <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
@@ -88,7 +145,7 @@ export const OverviewPage: React.FC<Props> = ({
                 Telemetry Stale Warning
               </p>
               <p className="text-xs text-amber-300/90 mt-0.5">
-                No new packet received within the configured timeout window ({settings.offline_timeout_seconds} seconds). Gateway connection or sensor transmission may be disrupted.
+                No new packet received within the configured timeout window ({settings.offline_timeout_seconds} seconds). Last reading was at {new Date(latestReading.received_at).toLocaleTimeString()} ({freshnessState.elapsedSeconds ? `${freshnessState.elapsedSeconds}s ago` : ''}).
               </p>
             </div>
           </div>
@@ -96,23 +153,65 @@ export const OverviewPage: React.FC<Props> = ({
             TIMEOUT EXCEEDED
           </span>
         </div>
-      )}
+      ) : null}
 
       {/* Primary Research Station Info Header */}
       <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5 text-xs text-slate-400 mb-1">
-            <span className="font-mono text-cyan-400 font-semibold">{node?.node_code || 'PA-ANDAM-001'}</span>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 mb-1">
+            <span className="font-mono text-cyan-400 font-bold bg-cyan-950/80 border border-cyan-800/80 px-2 py-0.5 rounded">
+              NODE: {node?.node_code || 'PA-ANDAM-001'}
+            </span>
             <span aria-hidden="true">·</span>
             <span>{node?.location_description || 'Location not configured'}</span>
           </div>
           <h2 className="text-lg font-bold text-slate-100 tracking-tight">
             {node?.node_name || 'ASU-Ibajay Flood Monitoring Node'}
           </h2>
+          {latestReading ? (
+            <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs font-mono text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Last Telemetry:</span>
+                <strong className="text-slate-200">
+                  {new Date(latestReading.received_at).toLocaleDateString()} {new Date(latestReading.received_at).toLocaleTimeString()}
+                </strong>
+                {freshnessState.elapsedSeconds !== null && (
+                  <span className="text-slate-400">({freshnessState.elapsedSeconds}s ago)</span>
+                )}
+              </span>
+              {observedCadence && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span className="text-cyan-300">
+                    ESP32 Cadence: ~{observedCadence}s
+                  </span>
+                </>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs font-mono text-slate-400 mt-1">
+              Status: Awaiting first telemetry packet from ESP32 gateway
+            </p>
+          )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           <TelemetrySourceBadge source={telemetrySource} />
+          {/* Freshness Badge */}
+          <span
+            className={`font-mono text-xs font-bold px-2.5 py-1 rounded border uppercase tracking-wider ${
+              freshnessState.state === 'fresh'
+                ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50'
+                : freshnessState.state === 'delayed'
+                ? 'bg-amber-950/70 text-amber-300 border-amber-500/50'
+                : freshnessState.state === 'stale'
+                ? 'bg-rose-950/70 text-rose-300 border-rose-500/50'
+                : 'bg-slate-900 text-slate-400 border-slate-700'
+            }`}
+          >
+            {freshnessState.label}
+          </span>
           <StatusBadge status={status} size="lg" />
         </div>
       </div>
@@ -237,80 +336,90 @@ export const OverviewPage: React.FC<Props> = ({
         </div>
 
         {/* Recharts Trend Line */}
-        <div className="h-64 sm:h-72 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis
-                dataKey="time"
-                stroke="#64748b"
-                tick={{ fill: '#64748b', fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-              />
-              <YAxis
-                domain={[0, 100]}
-                stroke="#64748b"
-                tick={{ fill: '#64748b', fontSize: 11, fontFamily: 'IBM Plex Mono' }}
-                unit={` ${unit}`}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#090e1b',
-                  borderColor: '#334155',
-                  borderRadius: '6px',
-                  fontFamily: 'IBM Plex Mono',
-                  fontSize: '12px',
-                  color: '#e2e8f0',
-                }}
-              />
-              {/* Relay Green line at 20 */}
-              <ReferenceLine
-                y={settings.green_threshold}
-                stroke="#10b981"
-                strokeDasharray="4 4"
-                label={{
-                  value: `Relay Min (${settings.green_threshold}cm)`,
-                  fill: '#10b981',
-                  fontSize: 10,
-                  position: 'insideBottomRight',
-                }}
-              />
-              {/* Warning threshold line at 50 */}
-              <ReferenceLine
-                y={settings.warning_threshold}
-                stroke="#f59e0b"
-                strokeDasharray="4 4"
-                label={{
-                  value: `Warning (${settings.warning_threshold}cm)`,
-                  fill: '#f59e0b',
-                  fontSize: 10,
-                  position: 'insideTopRight',
-                }}
-              />
-              {/* Critical threshold line at 80 */}
-              <ReferenceLine
-                y={settings.critical_threshold}
-                stroke="#f43f5e"
-                strokeDasharray="4 4"
-                label={{
-                  value: `Critical (${settings.critical_threshold}cm)`,
-                  fill: '#f43f5e',
-                  fontSize: 10,
-                  position: 'insideTopRight',
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="waterLevel"
-                stroke="#06b6d4"
-                strokeWidth={2.5}
-                dot={{ r: 2, fill: '#06b6d4' }}
-                activeDot={{ r: 5, fill: '#22d3ee' }}
-                name="Water Level"
-                isAnimationActive={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        {chartData.length === 0 ? (
+          <div className="h-64 sm:h-72 w-full flex flex-col items-center justify-center border border-dashed border-slate-800 rounded-lg p-6 text-center text-slate-400 font-mono text-xs">
+            <Activity className="w-8 h-8 text-cyan-500/50 mb-2 animate-pulse" />
+            <p className="text-slate-200 font-bold mb-1">Awaiting Telemetry Packets</p>
+            <p className="text-[11px] text-slate-400 max-w-md">
+              The waveform will plot live as soon as readings are received by the Edge Function and inserted into <code className="text-cyan-300">flood_readings</code>.
+            </p>
+          </div>
+        ) : (
+          <div className="h-64 sm:h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis
+                  dataKey="time"
+                  stroke="#64748b"
+                  tick={{ fill: '#64748b', fontSize: 11, fontFamily: 'IBM Plex Mono' }}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  stroke="#64748b"
+                  tick={{ fill: '#64748b', fontSize: 11, fontFamily: 'IBM Plex Mono' }}
+                  unit={` ${unit}`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#090e1b',
+                    borderColor: '#334155',
+                    borderRadius: '6px',
+                    fontFamily: 'IBM Plex Mono',
+                    fontSize: '12px',
+                    color: '#e2e8f0',
+                  }}
+                />
+                {/* Relay Green line at 20 */}
+                <ReferenceLine
+                  y={settings.green_threshold}
+                  stroke="#10b981"
+                  strokeDasharray="4 4"
+                  label={{
+                    value: `Relay Min (${settings.green_threshold}cm)`,
+                    fill: '#10b981',
+                    fontSize: 10,
+                    position: 'insideBottomRight',
+                  }}
+                />
+                {/* Warning threshold line at 50 */}
+                <ReferenceLine
+                  y={settings.warning_threshold}
+                  stroke="#f59e0b"
+                  strokeDasharray="4 4"
+                  label={{
+                    value: `Warning (${settings.warning_threshold}cm)`,
+                    fill: '#f59e0b',
+                    fontSize: 10,
+                    position: 'insideTopRight',
+                  }}
+                />
+                {/* Critical threshold line at 80 */}
+                <ReferenceLine
+                  y={settings.critical_threshold}
+                  stroke="#f43f5e"
+                  strokeDasharray="4 4"
+                  label={{
+                    value: `Critical (${settings.critical_threshold}cm)`,
+                    fill: '#f43f5e',
+                    fontSize: 10,
+                    position: 'insideTopRight',
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="waterLevel"
+                  stroke="#06b6d4"
+                  strokeWidth={2.5}
+                  dot={{ r: 2, fill: '#06b6d4' }}
+                  activeDot={{ r: 5, fill: '#22d3ee' }}
+                  name="Water Level"
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       {/* Relays Hardware Status Section */}

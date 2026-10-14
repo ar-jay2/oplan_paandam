@@ -17,11 +17,12 @@ import { AlertsThresholdsPage } from './components/alerts/AlertsThresholdsPage';
 import { ReportsPage } from './components/reports/ReportsPage';
 import { SystemSettingsPage } from './components/settings/SystemSettingsPage';
 import { SimulationController } from './components/common/SimulationController';
+import { SupabaseBanner } from './components/common/SupabaseBanner';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<NavigationPage>('overview');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
-  const [isSimOpen, setIsSimOpen] = useState<boolean>(true); // Open by default in research dev mode for easy testing
+  const [isSimOpen, setIsSimOpen] = useState<boolean>(false); // Closed by default in live production/research mode
   const [telemetryTick, setTelemetryTick] = useState<number>(0);
 
   // Subscribe to central reactive telemetry store
@@ -43,6 +44,12 @@ export default function App() {
   const connectionState = telemetryStore.getConnectionState();
   const isStale = telemetryStore.isReadingStale(latestReading);
   const isAdmin = telemetryStore.getIsAdmin();
+  const supabaseStatus = telemetryStore.getSupabaseStatus();
+  const isLoading = telemetryStore.getIsLoading();
+
+  const observedCadence = supabaseStatus.observedCadenceSeconds ?? telemetryStore.getObservedTransmissionInterval(selectedNode?.id);
+  const freshnessState = telemetryStore.getFreshnessState(selectedNode?.id);
+  const allReadings = telemetryStore.getAllReadings();
 
   // Relays calculation based on research criteria
   const relays = telemetryStore.computeRelayStates(
@@ -78,6 +85,12 @@ export default function App() {
           isStale={isStale}
         />
 
+        {/* Supabase Connection & RLS Notification Banner */}
+        <SupabaseBanner
+          status={supabaseStatus}
+          onNavigateToSettings={() => setCurrentPage('settings')}
+        />
+
         {/* Page Content Viewport */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           {currentPage === 'overview' && (
@@ -90,6 +103,9 @@ export default function App() {
               telemetrySource={telemetrySource}
               connectionState={connectionState}
               isStale={isStale}
+              observedCadence={observedCadence}
+              freshnessState={freshnessState}
+              supabaseStatus={supabaseStatus}
               onNavigateToLive={() => setCurrentPage('live')}
               onNavigateToAnalytics={() => setCurrentPage('analytics')}
             />
@@ -106,6 +122,9 @@ export default function App() {
               connectionState={connectionState}
               isStale={isStale}
               latestPacket={latestPacket}
+              observedCadence={observedCadence}
+              freshnessState={freshnessState}
+              supabaseStatus={supabaseStatus}
             />
           )}
 
@@ -131,7 +150,7 @@ export default function App() {
           {currentPage === 'nodes' && (
             <SensorNodesPage
               nodes={nodes}
-              readings={historicalReadings}
+              readings={allReadings}
               selectedNodeId={selectedNode?.id || ''}
               isAdmin={isAdmin}
               onSelectNode={(id) => telemetryStore.setSelectedNodeId(id)}
