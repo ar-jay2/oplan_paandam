@@ -9,7 +9,6 @@ import {
 } from '../../types/telemetry';
 import { StatusBadge } from '../common/StatusBadge';
 import { RelayIndicator } from '../common/RelayIndicator';
-import { TelemetrySourceBadge } from '../common/TelemetrySourceBadge';
 import {
   Activity,
   AlertTriangle,
@@ -162,8 +161,6 @@ export const OverviewPage: React.FC<Props> = ({
             <span className="font-mono text-cyan-400 font-bold bg-cyan-950/80 border border-cyan-800/80 px-2 py-0.5 rounded">
               NODE: {node?.node_code || 'PA-ANDAM-001'}
             </span>
-            <span aria-hidden="true">·</span>
-            <span>{node?.location_description || 'Location not configured'}</span>
           </div>
           <h2 className="text-lg font-bold text-slate-100 tracking-tight">
             {node?.node_name || 'ASU-Ibajay Flood Monitoring Node'}
@@ -180,14 +177,6 @@ export const OverviewPage: React.FC<Props> = ({
                   <span className="text-slate-400">({freshnessState.elapsedSeconds}s ago)</span>
                 )}
               </span>
-              {observedCadence && (
-                <>
-                  <span aria-hidden="true">·</span>
-                  <span className="text-cyan-300">
-                    ESP32 Cadence: ~{observedCadence}s
-                  </span>
-                </>
-              )}
             </div>
           ) : (
             <p className="text-xs font-mono text-slate-400 mt-1">
@@ -197,7 +186,6 @@ export const OverviewPage: React.FC<Props> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <TelemetrySourceBadge source={telemetrySource} />
           {/* Freshness Badge */}
           <span
             className={`font-mono text-xs font-bold px-2.5 py-1 rounded border uppercase tracking-wider ${
@@ -217,7 +205,7 @@ export const OverviewPage: React.FC<Props> = ({
       </div>
 
       {/* Grid of Key SCADA Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Card 1: Current Water Level */}
         <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-4">
           <div className="flex items-center justify-between text-xs text-slate-400 font-mono mb-2">
@@ -238,25 +226,7 @@ export const OverviewPage: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Card 2: Sensor Distance */}
-        <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-mono mb-2">
-            <span className="uppercase tracking-wider">Ultrasonic Distance</span>
-            <Activity className="w-4 h-4 text-cyan-400" />
-          </div>
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-mono font-bold text-slate-100 tabular-nums">
-              {distance.toFixed(1)}
-            </span>
-            <span className="text-xs font-mono uppercase text-slate-400">{unit}</span>
-          </div>
-          <div className="mt-3 flex items-center justify-between text-xs pt-2 border-t border-slate-800/80">
-            <span className="text-slate-400">Transducer:</span>
-            <span className="font-mono text-slate-300">JSN-SR04T Waterproof</span>
-          </div>
-        </div>
-
-        {/* Card 3: LoRa Link Quality */}
+        {/* Card 2: LoRa Link Quality */}
         <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-4">
           <div className="flex items-center justify-between text-xs text-slate-400 font-mono mb-2">
             <span className="uppercase tracking-wider">433MHz LoRa Link</span>

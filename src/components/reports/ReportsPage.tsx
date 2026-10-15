@@ -11,7 +11,8 @@ import {
   AlertTriangle,
   Zap,
   Shield,
-  Clock
+  Clock,
+  Edit3
 } from 'lucide-react';
 
 interface Props {
@@ -32,6 +33,27 @@ export const ReportsPage: React.FC<Props> = ({
   const [reportRange, setReportRange] = useState<'24h' | '7d' | '30d'>('24h');
   const [reportTitle, setReportTitle] = useState<string>(
     'Hydrological Field Telemetry & Flood Risk Assessment Report'
+  );
+
+  // Editable sign-off credentials (persisted in localStorage)
+  const [signer1Title, setSigner1Title] = useState<string>(
+    () => localStorage.getItem('paandam_signer1_title') || 'Lead Researcher / Project Engineer'
+  );
+  const [signer1Name, setSigner1Name] = useState<string>(
+    () => localStorage.getItem('paandam_signer1_name') || 'Engr. Trixxie Mae Quetua'
+  );
+  const [signer1Affiliation, setSigner1Affiliation] = useState<string>(
+    () => localStorage.getItem('paandam_signer1_affiliation') || 'Aklan State University – Ibajay Campus'
+  );
+
+  const [signer2Title, setSigner2Title] = useState<string>(
+    () => localStorage.getItem('paandam_signer2_title') || 'MDRRMO Representative / Verification Officer'
+  );
+  const [signer2Name, setSigner2Name] = useState<string>(
+    () => localStorage.getItem('paandam_signer2_name') || 'Authorized MDRRMO Officer'
+  );
+  const [signer2Affiliation, setSigner2Affiliation] = useState<string>(
+    () => localStorage.getItem('paandam_signer2_affiliation') || 'Municipality of Ibajay, Province of Aklan'
   );
 
   const levels = readings.map((r) => r.water_level);
@@ -235,20 +257,114 @@ export const ReportsPage: React.FC<Props> = ({
         </div>
 
         {/* Formal Institutional Sign-off Block */}
-        <div className="pt-8 border-t border-slate-800 print:border-slate-300 grid grid-cols-2 gap-8 text-xs font-mono text-slate-400 print:text-slate-800">
+        <div className="pt-8 border-t border-slate-800 print:border-slate-300 grid grid-cols-1 md:grid-cols-2 gap-8 text-xs font-mono text-slate-400 print:text-slate-800">
+          {/* Signer 1: Lead Researcher / Primary Signer */}
           <div>
-            <p className="uppercase text-[10px] text-slate-400">Lead Researcher / Project Engineer</p>
-            <div className="mt-8 border-t border-slate-700 print:border-slate-400 pt-1">
-              <p className="font-bold text-slate-200 print:text-black">Engr. Trixxie Mae Quetua</p>
-              <p className="text-[11px]">Aklan State University – Ibajay Campus</p>
+            <div className="flex items-center justify-between mb-1">
+              <label className="uppercase text-[10px] text-slate-400 print:text-slate-600 block">
+                Designation / Title
+              </label>
+              <span className="text-[10px] text-cyan-400/80 font-mono print:hidden flex items-center gap-1">
+                <Edit3 className="w-3 h-3" />
+                <span>Editable</span>
+              </span>
+            </div>
+            <input
+              type="text"
+              value={signer1Title}
+              onChange={(e) => {
+                setSigner1Title(e.target.value);
+                localStorage.setItem('paandam_signer1_title', e.target.value);
+              }}
+              placeholder="e.g. Lead Researcher / Project Engineer"
+              className="w-full bg-slate-900/70 hover:bg-slate-900 focus:bg-slate-900 border border-slate-700/80 focus:border-cyan-500 rounded px-2.5 py-1 text-xs text-slate-300 font-mono focus:outline-none transition-colors print:border-none print:bg-transparent print:p-0 print:text-slate-700 print:text-[10px] print:uppercase"
+            />
+            <div className="mt-6 border-t border-slate-700 print:border-slate-400 pt-2 space-y-1.5">
+              <div>
+                <label className="text-[10px] text-slate-400 print:hidden block mb-0.5">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={signer1Name}
+                  onChange={(e) => {
+                    setSigner1Name(e.target.value);
+                    localStorage.setItem('paandam_signer1_name', e.target.value);
+                  }}
+                  placeholder="Enter Signer Full Name"
+                  className="w-full bg-slate-900/70 hover:bg-slate-900 focus:bg-slate-900 border border-slate-700/80 focus:border-cyan-500 rounded px-2.5 py-1 text-xs font-bold text-slate-100 font-mono focus:outline-none transition-colors print:border-none print:bg-transparent print:p-0 print:text-black print:font-bold"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-400 print:hidden block mb-0.5">
+                  Affiliation / Campus
+                </label>
+                <input
+                  type="text"
+                  value={signer1Affiliation}
+                  onChange={(e) => {
+                    setSigner1Affiliation(e.target.value);
+                    localStorage.setItem('paandam_signer1_affiliation', e.target.value);
+                  }}
+                  placeholder="Enter Institution or Campus"
+                  className="w-full bg-slate-900/70 hover:bg-slate-900 focus:bg-slate-900 border border-slate-700/80 focus:border-cyan-500 rounded px-2.5 py-1 text-[11px] text-slate-300 font-mono focus:outline-none transition-colors print:border-none print:bg-transparent print:p-0 print:text-slate-600"
+                />
+              </div>
             </div>
           </div>
 
+          {/* Signer 2: Verification Officer / Secondary Signer */}
           <div>
-            <p className="uppercase text-[10px] text-slate-400">MDRRMO Representative / Verification Officer</p>
-            <div className="mt-8 border-t border-slate-700 print:border-slate-400 pt-1">
-              <p className="font-bold text-slate-200 print:text-black">Authorized MDRRMO Officer</p>
-              <p className="text-[11px]">Municipality of Ibajay, Province of Aklan</p>
+            <div className="flex items-center justify-between mb-1">
+              <label className="uppercase text-[10px] text-slate-400 print:text-slate-600 block">
+                Designation / Title
+              </label>
+              <span className="text-[10px] text-cyan-400/80 font-mono print:hidden flex items-center gap-1">
+                <Edit3 className="w-3 h-3" />
+                <span>Editable</span>
+              </span>
+            </div>
+            <input
+              type="text"
+              value={signer2Title}
+              onChange={(e) => {
+                setSigner2Title(e.target.value);
+                localStorage.setItem('paandam_signer2_title', e.target.value);
+              }}
+              placeholder="e.g. MDRRMO Representative / Verification Officer"
+              className="w-full bg-slate-900/70 hover:bg-slate-900 focus:bg-slate-900 border border-slate-700/80 focus:border-cyan-500 rounded px-2.5 py-1 text-xs text-slate-300 font-mono focus:outline-none transition-colors print:border-none print:bg-transparent print:p-0 print:text-slate-700 print:text-[10px] print:uppercase"
+            />
+            <div className="mt-6 border-t border-slate-700 print:border-slate-400 pt-2 space-y-1.5">
+              <div>
+                <label className="text-[10px] text-slate-400 print:hidden block mb-0.5">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={signer2Name}
+                  onChange={(e) => {
+                    setSigner2Name(e.target.value);
+                    localStorage.setItem('paandam_signer2_name', e.target.value);
+                  }}
+                  placeholder="Enter Signer Full Name"
+                  className="w-full bg-slate-900/70 hover:bg-slate-900 focus:bg-slate-900 border border-slate-700/80 focus:border-cyan-500 rounded px-2.5 py-1 text-xs font-bold text-slate-100 font-mono focus:outline-none transition-colors print:border-none print:bg-transparent print:p-0 print:text-black print:font-bold"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-400 print:hidden block mb-0.5">
+                  Affiliation / Agency
+                </label>
+                <input
+                  type="text"
+                  value={signer2Affiliation}
+                  onChange={(e) => {
+                    setSigner2Affiliation(e.target.value);
+                    localStorage.setItem('paandam_signer2_affiliation', e.target.value);
+                  }}
+                  placeholder="Enter Organization or Agency"
+                  className="w-full bg-slate-900/70 hover:bg-slate-900 focus:bg-slate-900 border border-slate-700/80 focus:border-cyan-500 rounded px-2.5 py-1 text-[11px] text-slate-300 font-mono focus:outline-none transition-colors print:border-none print:bg-transparent print:p-0 print:text-slate-600"
+                />
+              </div>
             </div>
           </div>
         </div>

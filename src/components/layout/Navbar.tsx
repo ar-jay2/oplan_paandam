@@ -1,7 +1,6 @@
 import React from 'react';
 import { TelemetrySource, ConnectionState } from '../../types/telemetry';
-import { TelemetrySourceBadge } from '../common/TelemetrySourceBadge';
-import { Menu, Terminal, UserCheck, ShieldAlert } from 'lucide-react';
+import { Menu, Terminal, UserCheck } from 'lucide-react';
 
 interface Props {
   onToggleMobileMenu: () => void;
@@ -40,29 +39,8 @@ export const Navbar: React.FC<Props> = ({
         </span>
       </div>
 
-      {/* Zone 2: 4-5 Concise Single-Line Status / Navigation Elements */}
+      {/* Zone 2: Navigation & Mode Controls */}
       <div className="hidden md:flex items-center gap-5 text-xs text-slate-400 font-mono whitespace-nowrap shrink-0">
-        <TelemetrySourceBadge source={telemetrySource} size="sm" />
-
-        <div className="flex items-center gap-2">
-          <span>Gateway Link:</span>
-          <span
-            className={`font-semibold ${
-              isStale
-                ? 'text-amber-400'
-                : connectionState === 'connected'
-                ? 'text-emerald-400'
-                : 'text-rose-400'
-            }`}
-          >
-            {isStale ? 'STALE' : connectionState === 'connected' ? 'ACTIVE' : 'OFFLINE'}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5 text-slate-400">
-          <span>Protocol:</span>
-          <span className="text-cyan-300">RA-02 433MHz LoRa → ESP32</span>
-        </div>
 
         <button
           onClick={onToggleAdmin}

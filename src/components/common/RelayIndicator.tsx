@@ -1,6 +1,6 @@
 import React from 'react';
 import { RelayStates } from '../../types/telemetry';
-import { Power, Info } from 'lucide-react';
+import { Power } from 'lucide-react';
 
 interface Props {
   relays: RelayStates;
@@ -89,16 +89,6 @@ export const RelayIndicator: React.FC<Props> = ({ relays, compact = false }) => 
           <p className="text-[10px] text-slate-400 mt-0.5">Physical indicator for critical siren</p>
         </div>
       </div>
-
-      {!compact && (
-        <div className="flex items-start gap-2 text-[11px] text-slate-400 bg-slate-950/40 p-2 rounded border border-slate-800/60">
-          <Info className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-          <p>
-            <strong className="text-slate-300">Local Arduino UNO Execution: </strong>
-            {relays.reason} All relays remain de-energized below 20 cm or if the ultrasonic sensor is offline.
-          </p>
-        </div>
-      )}
     </div>
   );
 };
